@@ -14,24 +14,26 @@ def get_rendered_html(url: str) -> dict:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
+            # Set timeout and wait for network idle
+            page.set_default_timeout(30000)
             page.goto(url, wait_until="networkidle")
-            content = page.content()
 
+            content = page.content()
             browser.close()
 
-            # Parse images
-            soup = BeautifulSoup(content, "html.parser")
-            imgs = [urljoin(url, img["src"]) for img in soup.find_all("img", src=True)]
-            if len(content) > 300000:
-                    print("Warning: HTML too large, truncating...")
-                    content = content[:300000] + "... [TRUNCATED DUE TO SIZE]"
-            return {
-                "html": content,
-                "images": imgs,
-                "url": url
-            }
+        # Parse images
+        soup = BeautifulSoup(content, "html.parser")
+        imgs = [urljoin(url, img["src"]) for img in soup.find_all("img", src=True)]
+
+        if len(content) > 300000:
+            print("Warning: HTML too large, truncating...")
+            content = content[:300000] + "... [TRUNCATED DUE TO SIZE]"
+
+        return {
+            "html": content,
+            "images": imgs,
+            "url": url
+        }
 
     except Exception as e:
         return {"error": f"Error fetching/rendering page: {str(e)}"}
-
-
